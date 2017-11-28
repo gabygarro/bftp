@@ -126,11 +126,38 @@ void * server_client_thread (void *args) {
 
     if (debug_server) fprintf(stderr, "\n* Servidor: Socket %d conectado\n> ", socket);
 
-	// Loop que manda mensajes al cliente
-    while(1) {
+	// Loop que espera mensajes de los clientes
+    while (1) {
+        int flag = server_recv(socket);
+        if (flag == -1) { // Si falló
+            free(wa);
+            close(socket);
+            pthread_exit(NULL);
+        }
+        server_buffer[nbytes] = '\0'; //Por si acaso
+        printf("\n* Socket %d: %s \n", socket, server_buffer);
+
+        //Enviar mensaje con lo que pide
+        //char * pwd = server_pwd();
+        if (strcmp(server_buffer, "pwd") == 0) {
+            char * pwd = "dir";
+            flag = server_send(socket, pwd);
+            if (flag == -1) {
+                free(wa);
+                pthread_exit(NULL);
+            }
+        }
+        else {
+            printf("No implementado\n");
+            server_send(socket, "No implementado");
+        }
+            
+    }
+
+    /*while(1) {
         sprintf(tosend,"%d -- Hellow, socket!\n", (int) time(NULL));
 
-        nbytes = send(socket, tosend, strlen(tosend), 0); // enviar mensaje
+         // enviar mensaje
 
 		// Si no se envió el mensaje
         if (nbytes == -1 && (errno == ECONNRESET || errno == EPIPE)) {
@@ -145,7 +172,64 @@ void * server_client_thread (void *args) {
             pthread_exit(NULL);
         }
         sleep(5);
-    }
+    }*/
 
     pthread_exit(NULL);
+}
+
+/* Recibe un mensaje y lo guarda en server_buffer
+    Si retorna un -1, no pudo recibir nada */
+int server_recv(int _socket) {
+    nbytes = recv(_socket, server_buffer, sizeof(server_buffer) - 1, 0);
+    if (nbytes == 0) {
+        perror("\n** ERROR: Servidor: Cliente cerró la conexión.");
+        return -1;
+    }
+    else if (nbytes == -1) {
+        perror("\n** ERROR: Servidor: Socket recv() failed");
+        return -1;
+    }
+    return 0;
+}
+
+/* Envía un mensaje */
+int server_send(int _socket, char * msg) {
+    int bytes = send(_socket, msg, strlen(msg), 0);
+    if (bytes == -1 && (errno == ECONNRESET || errno == EPIPE)) {
+        fprintf(stderr, "\n* Servidor: Socket %d desconectado\n> ", _socket);
+        close(_socket);
+        return -1;
+    }
+    else if (bytes == -1) { // Si ocurrió algún error?
+        perror("\n** ERROR: Servidor: Unexpected error in send()");
+        return -1;
+    }
+    return 0;
+}
+
+/* Retorna el directorio actual */
+char * server_pwd() {
+    return url;
+}
+
+/* Cambia el directorio actual del servidor */
+int server_change_dir(char * dir) {
+    // Si es vacío, cambiar el directorio a home
+    if (dir == NULL) {
+        chdir(getenv("HOME"));
+        //url = getenv("HOME");
+        strcpy(url, getenv("HOME"));
+		return 1;
+	}
+	else { 
+		if (chdir(dir) == -1) {
+			printf("ERROR: Directorio %s no existe\n", dir);
+            return -1;
+        }
+        else {
+            //url = dir; //Actualizar el nombre del directorio actual
+            strcpy(url, dir);
+        }
+	}
+	return 0;
 }

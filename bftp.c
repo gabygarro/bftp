@@ -1,7 +1,7 @@
 /*
  * Proyecto III - Sistemas Operativos
  * Gabriela Garro Abdykerimov
- * 26 de Noviembre 2017
+ * 27 de Noviembre 2017
  *
  * Para compilar: 
  * gcc -pthread -o bftp bftp.c client.c server.c
@@ -13,6 +13,7 @@
  * * bftp://<usuario>:<contraseña>@<dirección-ip>/<url-ruta> : Conectar con una máquina remota
  * * open <dirección-ip> : establece una conexión remota
  * * close : cierra la conexión actual
+ * * pwd : muestra el directorio activo remoto
  */
 
 #include <unistd.h>
@@ -26,7 +27,6 @@
 #include "client.h"
 #include "server.h"
 
-#define MAX_PROMPT_LENGTH 256
 #define MAX_USERNAME_LENGTH 48
 #define MAX_PASSWORD_LENGTH 32
 #define MAX_IPADRESS_LENGTH 45
@@ -91,6 +91,7 @@ void print_help() {
 	printf(" * bftp://<usuario>:<contraseña>@<dirección-ip>/<url-ruta> : Conectar con una máquina remota\n");
 	printf(" * open <dirección-ip>: establece una conexión remota\n");
 	printf(" * close : cierra la conexión actual\n");
+	printf(" * pwd : muestra el directorio activo remoto\n");
 	//exit(0);
 }
 
@@ -125,14 +126,23 @@ void manage_cmds() {
 		
 		if (arg2[0] != 0) {
 			strcpy(ip_address, arg2);
-			client_close();
 			client_open(arg2);
 		}
 		else {
 			print_error("Falta argumento.");
 		}
 	}
-	// Help ************************************
+	// pwd ************************************
+	else if (strcmp(arg1, "pwd") == 0) {
+		printf("Directorio actual: %s\n", client_pwd());
+	}
+	// cd *************************************
+	else if (strcmp(arg1, "cd") == 0) {
+		//Recuperar siguiente argumento
+		strcpy(arg2, strtok(NULL, " \n"));
+		client_cd(arg2);
+	}
+	// Help ***********************************
 	else if (strcmp(arg1, "help") == 0) { // help
 		print_help();
 	}

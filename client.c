@@ -1,17 +1,5 @@
 #include "client.h"
 
-/*  struct addrinfo {
-		int ai_flags;
-		int ai_family;
-		int ai_socktype;
-		int ai_protocol;
-		size_t ai_addrlen;
-		struct sockaddr *ai_addr;
-		char *ai_canonname;
-		struct addrinfo *ai_next;
-	};
-*/
-
 int client_init(char _username[], char _password[], char _ip_address[], char _url[]) {
     debug_client = true;
     // Guardar valores
@@ -19,11 +7,6 @@ int client_init(char _username[], char _password[], char _ip_address[], char _ur
     strcpy(password, _password);
     strcpy(ip_address, _ip_address);
     strcpy(url, _url);
-
-	//int sock; //Descriptor del socket
-	//struct sockaddr_in server; // Struct con la información del servidor
-	char buffer[100 + 1]; // +1 for '\0'
-    int nbytes; // Num de bytes recibidos
 
 	// Crear socket
 	if ((sock = socket(AF_INET, SOCK_STREAM , 0)) == -1) {
@@ -45,8 +28,8 @@ int client_init(char _username[], char _password[], char _ip_address[], char _ur
 
     if (debug_client) printf("\n* Cliente: Conectado al servidor.\n> ");
 
-    
-    nbytes = recv(sock, buffer, sizeof(buffer) - 1, 0); 
+    /* Escuchar un mensaje*/
+    /*nbytes = recv(sock, buffer, sizeof(buffer) - 1, 0); 
     if (nbytes == 0) {
         perror("\n** ERROR: Cliente: Servidor cerró la conexión.");
         close(sock);
@@ -60,7 +43,11 @@ int client_init(char _username[], char _password[], char _ip_address[], char _ur
     else {
         buffer[nbytes] = '\0'; //Por si acaso
         printf("Mensaje: %s \n", buffer);
-    }
+    }*/
+
+    /* Directorio actual */
+    client_cd(NULL); // Por si acaso, poner el directorio actual en home
+    client_cd(_url);
     
     
     //close(sock);
@@ -75,5 +62,62 @@ int client_close() {
 }
 
 int client_open(char _ip_address[]) {
+    client_close();
     client_init(username, password, _ip_address, url);
+}
+
+char * client_pwd() {
+    int nbytes;
+
+    // Enviar mensaje
+    nbytes = send(sock, "pwd", 3, 0);
+    if (nbytes == -1 && (errno == ECONNRESET || errno == EPIPE)) {
+        fprintf(stderr, "\n* Cliente: Socket %d desconectado\n> ", sock);
+        close(sock);
+        exit(-1);
+    }
+    else if (nbytes == -1) { // Si ocurrió algún error?
+        perror("\n** ERROR: Cliente: Unexpected error in send()");
+        close(sock);
+        exit(-1);
+    }
+
+    // Esperar mensaje
+    nbytes = recv(sock, client_buffer, sizeof(client_buffer) - 1, 0);
+    if (nbytes == 0) {
+        perror("\n** ERROR: Servidor: Cliente cerró la conexión.");
+        close(sock);
+        exit(-1);
+    }
+    else if (nbytes == -1) {
+        perror("\n** ERROR: Servidor: Socket recv() failed");
+        close(sock);
+        exit(-1);
+    }
+    else {
+        client_buffer[nbytes] = '\0'; //Por si acaso
+        return client_buffer;
+    }
+    return "";
+}
+
+int client_cd(char * dir) {
+    // Si es vacío, cambiar el directorio a home
+    if (dir == NULL) {
+        chdir(getenv("HOME"));
+        //url = getenv("HOME");
+        strcpy(url, getenv("HOME"));
+		return 1;
+	}
+	else { 
+		if (chdir(dir) == -1) {
+			printf("ERROR: Directorio %s no existe\n", dir);
+            return -1;
+        }
+        else {
+            //url = dir; //Actualizar el nombre del directorio actual
+            strcpy(url, dir);
+        }
+	}
+	return 0;
 }
