@@ -25,8 +25,12 @@ char url[MAX_URL_LENGTH];
 
 bool debug_client;
 
-int client_init(char _username[], char _password[], char _ip_address[], char _url[]);
+int sock; //Descriptor del socket
+struct sockaddr_in server; // Struct con la información del servidor
 
+int client_init(char _username[], char _password[], char _ip_address[], char _url[]);
+int client_close();
+int client_open(char _ip_address[]);
 
 
 #endif // CLIENT_H_INCLUDED

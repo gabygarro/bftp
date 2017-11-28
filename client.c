@@ -20,8 +20,8 @@ int client_init(char _username[], char _password[], char _ip_address[], char _ur
     strcpy(ip_address, _ip_address);
     strcpy(url, _url);
 
-	int sock; //Descriptor del socket
-	struct sockaddr_in server; // Struct con la información del servidor
+	//int sock; //Descriptor del socket
+	//struct sockaddr_in server; // Struct con la información del servidor
 	char buffer[100 + 1]; // +1 for '\0'
     int nbytes; // Num de bytes recibidos
 
@@ -45,7 +45,8 @@ int client_init(char _username[], char _password[], char _ip_address[], char _ur
 
     if (debug_client) printf("\n* Cliente: Conectado al servidor.\n> ");
 
-    nbytes = recv(sock, buffer, sizeof(buffer) - 1, 0);
+    
+    nbytes = recv(sock, buffer, sizeof(buffer) - 1, 0); 
     if (nbytes == 0) {
         perror("\n** ERROR: Cliente: Servidor cerró la conexión.");
         close(sock);
@@ -61,8 +62,18 @@ int client_init(char _username[], char _password[], char _ip_address[], char _ur
         printf("Mensaje: %s \n", buffer);
     }
     
-    close(sock);
+    
+    //close(sock);
     
     return 0;
+}
 
+int client_close() {
+    close(sock);
+    if (debug_client) printf("\n * Cliente: Conexión cerrada.\n> ");
+    return 0;
+}
+
+int client_open(char _ip_address[]) {
+    client_init(username, password, _ip_address, url);
 }

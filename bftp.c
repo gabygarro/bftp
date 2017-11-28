@@ -11,7 +11,8 @@
  *
  * Opciones:
  * * bftp://<usuario>:<contraseña>@<dirección-ip>/<url-ruta> : Conectar con una máquina remota
- * * open <dirección-ip>: establece una conexión remota
+ * * open <dirección-ip> : establece una conexión remota
+ * * close : cierra la conexión actual
  */
 
 #include <unistd.h>
@@ -89,6 +90,7 @@ void print_help() {
 	printf("\nComandos:\n");
 	printf(" * bftp://<usuario>:<contraseña>@<dirección-ip>/<url-ruta> : Conectar con una máquina remota\n");
 	printf(" * open <dirección-ip>: establece una conexión remota\n");
+	printf(" * close : cierra la conexión actual\n");
 	//exit(0);
 }
 
@@ -112,17 +114,19 @@ void manage_cmds() {
 	if (strcmp(arg1, "quit") == 0) {
 		exit(0);
 	}
+	// Close **********************************
+	else if (strcmp(arg1, "close") == 0) {
+		client_close();
+	}
 	// Open ***********************************
 	else if (strcmp(arg1, "open") == 0) {
-		char * algo = strtok(NULL, " \n");
-		printf("%s\n", algo);
-		
 		//Recuperar siguiente argumento
-		strcpy(arg2, algo);
+		strcpy(arg2, strtok(NULL, " \n"));
 		
 		if (arg2[0] != 0) {
 			strcpy(ip_address, arg2);
-			if (debug) printf("Cambiando conexión a %s\n", ip_address);
+			client_close();
+			client_open(arg2);
 		}
 		else {
 			print_error("Falta argumento.");
